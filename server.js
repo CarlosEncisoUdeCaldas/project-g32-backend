@@ -52,7 +52,7 @@ router.post('/createUser', ( req , res ) => {
     User.findOne( { email: newUser.email }, (err, userFinded) => {
         if(userFinded){
             res.send( { message: 'Usuario ya existe' })
-        }else{
+        }else if(!userFinded){
             // opcion 4 guardando un usuario con el formato tipo callback
             newUser.save( (err, userStored) => {
                 if(userStored){
@@ -64,15 +64,69 @@ router.post('/createUser', ( req , res ) => {
                     res.send( { message: 'Error del servidor' } )
                 }
             })
-        }
-        if(err){
-            res.send( { message: 'Error del servidor'})
+        }else{
+            res.send( { message: 'Error del servidor: ' + err})
         }
     } )
 })
-    //Leer Usuario - Read - R
-    //Editar Usuario - Update - U
-    //Eliminar Usuario - Delete - D
+
+//Leer Usuario EndPoint - Read - R
+router.get('/getAllUsers', ( req, res ) => { 
+    User.find( { }, function ( err , userDocs) {
+        if(err){
+            res.status(500).send( { message: 'Error del servidor: '+ err })
+        }else if(!userDocs){
+            res.status(404).send({ message: 'Colección sin documentos'})
+        }else{
+            res.status(200).send( { users: userDocs } )
+        }
+    } );
+})
+
+//Editar Usuario EndPoint- Update - U
+router.put('/update-user/:id', ( req , res) => { 
+    const idToUpdate = req.params.id
+    const { body } = req
+    const userToUpdate = {
+        firstname: body.firstname,
+        lastname: body.lastname,
+        email: body.email.toLowerCase(),
+        password: body.password    
+    }
+
+    User.findOne( { email: userToUpdate.email }, (err, emailFinded) => {
+        if(err){
+            res.send({message: 'Error del servidor: ' + err})
+        }else if(emailFinded){
+            res.send( { message: 'Email ya se encuentra en uso'})
+        }else {
+            User.findByIdAndUpdate( idToUpdate , userToUpdate, function (err, userUpdated) {
+                if(userUpdated){
+                    res.send( { message: 'Usuario actualizado satisfactoriamente'})
+                }else if(!userUpdated){
+                    res.send( { message: 'Usuario no existe' } )
+                }else{
+                    res.status(500).send( { message: `Error del servidor: ${err}` } )
+                }
+            })
+        }
+    })
+
+})
+
+//Eliminar Usuario - Delete - D
+router.delete('/delete-user/:id', ( req, res ) => {
+    const idToDelete = req.params.id;
+    User.findByIdAndRemove ( { _id: idToDelete }, (err, userDeleted) => {
+        if(err){
+            res.send( { message: 'Error del servidor: ' + err})
+        }else if(userDeleted){
+            res.send( {message: 'Usuario elimando con exito'})
+        }else{
+            res.send( { message: 'Usuario no encontrado '})
+        }
+    })
+})
 
 //enviar la const router para que app la ejecute
 app.use('/api/v1',router);
