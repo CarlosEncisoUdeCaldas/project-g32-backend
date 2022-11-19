@@ -29,7 +29,7 @@ const createUser = (req, res) => {
   // opcion 4
   User.findOne({ email: newUser.email }, (err, userFinded) => {
     if (userFinded) {
-      res.send({ message: "Usuario ya existe" });
+      res.send({ message: "Email ya se encuentra en uso" });
     } else if (!userFinded) {
       //agregamos mayor nivel de seguridad al password
       const passwordToEncrypt = newUser.password + salt;
@@ -46,9 +46,10 @@ const createUser = (req, res) => {
           // opcion 4 guardando un usuario con el formato tipo callback
           newUser.save((err, userStored) => {
             if (userStored) {
-              res.send({
+              res.send( {
                 message: "Usuario creado con exito",
-              });
+                status: 200
+              } );
             }
             if (err) {
               res.send({ message: "Error del servidor" });
@@ -75,31 +76,15 @@ const editUser = (req, res) => {
 
   User.findOne({ email: userToUpdate.email }, (err, userFinded) => {
     if (err) {
-      res.send({ message: "Error del servidor: " + err });
+      res.send( { message: "Error del servidor: " + err } );
     } else if (userFinded) {
       if (userFinded.id !== idToUpdate) {
         res.send({ message: "Email ya se encuentra en uso", user: userFinded });
       } else {
-        User.findByIdAndUpdate(idToUpdate, userToUpdate, (err, userUpdated) => {
-          if (userUpdated) {
-            res.send({ message: "Usuario actualizado satisfactoriamente" });
-          } else if (!userUpdated) {
-            res.send({ message: "Usuario no existe" });
-          } else {
-            res.status(500).send({ message: `Error del servidor: ${err}` });
-          }
-        });
+        userIsUpdate(idToUpdate, userToUpdate, res)
       }
     } else {
-      User.findByIdAndUpdate(idToUpdate, userToUpdate, (err, userUpdated) => {
-        if (userUpdated) {
-          res.send({ message: "Usuario actualizado satisfactoriamente" });
-        } else if (!userUpdated) {
-          res.send({ message: "Usuario no existe" });
-        } else {
-          res.status(500).send({ message: `Error del servidor: ${err}` });
-        }
-      });
+      userIsUpdate(idToUpdate, userToUpdate, res)
     }
   });
 };
@@ -130,6 +115,19 @@ const getAllUsers = (req, res) => {
     }
   });
 };
+
+//funcion para mejorar el proceso de actualizacion de usuario
+function userIsUpdate (id, update, res) {
+  User.findByIdAndUpdate(id, update, (err, userUpdated) => {
+    if (userUpdated) {
+      res.send({ message: "Usuario actualizado satisfactoriamente" });
+    } else if (!userUpdated) {
+      res.send({ message: "Usuario no existe" });
+    } else {
+      res.status(500).send({ message: `Error del servidor: ${err}` });
+    }
+  });
+}
 
 const userLogin = (req, res) => {
   res.send("User Login On");
